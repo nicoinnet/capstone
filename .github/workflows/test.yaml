@@ -4,7 +4,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  hello:
+  test:
     runs-on: ubuntu-24.04
     steps:
-      - run: echo "Hello World!"
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup Node.js environment
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: services/node/api-node/package.json
+          cache: "npm"
+          cache-dependency-path: services/node/api-node/package-lock.json
+      - name: Install task
+        uses: supplypike/setup-bin@8e3f88b4f143d9b5c3497f0fc12d45c83c123787 # v4.0.1
+        with:
+          uri: https://github.com/go-task/task/releases/download/v3.44.1/task_linux_amd64.tar.gz
+          sha256: 72991d4f041e18d925d073e54bc7d264a6d361fb
+          version: v3.44.1
+          name: task
+      - name: Install node deps
+        working-directory: services/node/api-node
+        run: |
+          task install-ci
+      - name: Run tests
+        working-directory: services/node/api-node
+        run: |
+          task test
