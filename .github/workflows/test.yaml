@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test-node:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
@@ -28,5 +28,30 @@ jobs:
           task install-ci
       - name: Run tests
         working-directory: services/node/api-node
+        run: |
+          task test
+  test-go:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: services/go/api-golang/go.mod
+          cache-dependency-path: services/go/api-golang/go.sum
+      - name: Install task
+        uses: supplypike/setup-bin@8e3f88b4f143d9b5c3497f0fc12d45c83c123787 # v4.0.1
+        with:
+          uri: https://github.com/go-task/task/releases/download/v3.44.1/task_linux_amd64.tar.gz
+          sha256: 72991d4f041e18d925d073e54bc7d264a6d361fb
+          version: v3.44.1
+          name: task
+      - name: Install app deps
+        working-directory: services/go/api-golang
+        run: |
+          task install-ci
+      - name: Run tests
+        working-directory: services/go/api-golang
         run: |
           task test
