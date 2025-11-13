@@ -1,4 +1,5 @@
 version: "3"
+
 env:
   GITHUB_TOKEN:
     sh: gh auth token
@@ -14,4 +15,4 @@ tasks:
           -e {{.PWD}}/event.json \
           -P ubuntu-24.04=catthehacker/ubuntu:act-22.04 \
           --directory ../../.. \
-          -W .github/workflows/test.yaml
+          -W .github/workflows/update-gitops-manifests.yaml

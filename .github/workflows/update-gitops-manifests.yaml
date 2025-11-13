@@ -2,9 +2,59 @@ name: Update GitOps Manifests
 
 on:
   workflow_dispatch:
+    inputs:
+      service:
+        required: true
+        description: path to service in repo
+        type: choice
+        options:
+          - services/go/api-golang
+          - services/node/api-node
+          - services/python/load-generator-python
+          - services/react/client-react
+      version:
+        required: true
+        description: version to deploy
+        type: string
+      environment:
+        required: true
+        description: environment to deploy to
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-gitops-${{ inputs.environment }}-${{ inputs.service }}
+  cancel-in-progress: false
 
 jobs:
-  hello:
+  update-manifests:
     runs-on: ubuntu-24.04
     steps:
-      - run: echo "Hello World!"
+      - name: Checkout Code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install task
+        uses: ./.github/actions/setup-dependencies
+      - name: Generate commit message
+        id: generate-commit-message
+        run: |
+          commit_message="chore: update ${{ inputs.environment }}, ${{ inputs.service }}, ${{ inputs.version }} [skip ci]"
+          echo "commit_message=${commit_message}" >> $GITHUB_OUTPUT
+      - name: Update manifests
+        working-directory: ${{ inputs.service }}
+        run: |
+          task utils:update-image-tags-service \
+            NEW_TAG=${{ inputs.version }} \
+            ENVIRONMENT=${{ inputs.environment }}
+      - name: check diff
+        run: |
+          git --no-pager diff
+      - name: commit & push
+        if: ${{ !env.ACT }}
+        working-directory: ${{ inputs.service }}
+        run: |
+          task utils:git:commit-push \
+            COMMIT_MSG=${{ steps.generate-commit-message.outputs.commit_message }} \
+            BRANCH=main

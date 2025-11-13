@@ -24,17 +24,20 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           filters: .github/utils/file-filters.yaml
+
   test:
     runs-on: ubuntu-24.04
     needs: filter
+    if: ${{ needs.filter.outputs.services != '[]' && needs.filter.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.filter.outputs.services)}}
+        service: ${{ fromJson(needs.filter.outputs.services ) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Setup Node.js environment
+        if: ${{ startsWith(matrix.service, 'services/node/' ) || startsWith(matrix.service, 'services/react/' ) }}
         uses: actions/setup-node@d7a11313b581b306c961b506cfc8971208bb03f6 # v4.4.0
         with:
           node-version-file: ${{ matrix.service }}/package.json
